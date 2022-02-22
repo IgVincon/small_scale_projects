@@ -231,7 +231,7 @@ def table_scrapper(
             text = extract_text(cell)
 
             # Check that cell is not empty.
-            if text != 'n/a':
+            if (text != 'n/a') and (j < len(keys)):
                 dic[keys[j]].append(text)
                 j += 1
             # If missing value add one to counter.
