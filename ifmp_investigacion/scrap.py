@@ -1,11 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
+"""This is the example module.
+
+This module does stuff.
 Created on Sun Aug  1 10:43:34 2021
-
-@author: IgVinçon
 """
 
-############################ IMPORT LIBRARIES ################################
+__version__ = '0.5'
+__author__ = 'Juan Ignacio Rodríguez Vinçon'
+
+################################### IMPORTS ###################################
 import unicodedata
 import time
 import random
@@ -15,7 +17,7 @@ import requests
 from requests.exceptions import HTTPError
 from bs4 import BeautifulSoup
 
-############################# SUB-ROUTINES ###################################
+################################ SUB-ROUTINES #################################
 def generator():
     while True:
         yield
@@ -93,7 +95,7 @@ def extract_text(html_content, add_new_line = False):
             .normalize('NFKD', text)
             .encode('ascii', 'ignore')
             .decode('utf8')
-        )
+            )
 
     return text
 
@@ -131,7 +133,7 @@ def clean(string, output_ls = False, keyword = None):  #Incluirla en extract?
                 r'|comision curricular:|comision de seguimiento|coordinadora.*'
                 r'|\.\sinstituto.*|\.\sdepartamento.*|:.*|\sfac\..*|\sinco,.*'
                 r'|\sdepbio.*|\scenur.*|(?<!\()\sfacultad.*'
-            )
+                )
         elif keyword == 'servicios involucrados':
             to_replace = r'\(\w*\)|:.*'
         text = re.sub(to_replace, '', string)
@@ -163,12 +165,13 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
         '.',
         'pagina en construccion.',
         'no corresponde'
-    ]
+        ]
     # List of keywords to compare for the clean function.
     clean_keywords = [
         'responsables',
         'responsables:',
-        'servicios involucrados']
+        'servicios involucrados'
+        ]
     # Iterate through each element in html_content and extract its text.
     for i in range(len(html_content)):
         text = extract_text(html_content[i])
@@ -179,10 +182,11 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
             text = clean(text)
             attr, value = (
                 # Split on the first space counting from the end of the string,
-                re.split('\s(?=\S+$)', text) if inverse
+                re.split('\s(?=\S+$)', text) 
+                if inverse
                 # else split on the first space.
                 else text.split(maxsplit = 1)
-            )
+                )
             if (attr == keyword) and (value not in missing_values):
                 return attr, value
             elif (attr == keyword) and (value in missing_values):
@@ -194,12 +198,13 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
                 extract_text(html_content[i+1], True)
                 if keyword == 'responsables:'
                 else extract_text(html_content[i+1])
-            )
+                )
             if child not in missing_values:
                 child = (
-                    clean(child, True, keyword) if keyword in clean_keywords
+                    clean(child, True, keyword) 
+                    if keyword in clean_keywords
                     else clean(child)
-                )
+                    )
                 return text, child
             else:
                 return text, 'n/a'
@@ -208,9 +213,8 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
     return keyword, 'n/a'
 
 
-def table_scrapper(
-    rows, cell_tag, dataset, keys, href = None, base_url = None
-):
+def table_scrapper(rows, cell_tag, dataset,
+                   keys, href = None, base_url = None):
     '''
     some function description to input later.
 
@@ -251,8 +255,9 @@ def table_scrapper(
                 url = extract_href(url)
                 url = (
                     base_url + url
-                    if (base_url != None) and (url != 'n/a') else url
-                )
+                    if (base_url != None) and (url != 'n/a') 
+                    else url
+                    )
                 dic[k].append(url)
 
 
