@@ -1,6 +1,8 @@
-"""This is the example module.
+"""This is the scrap module.
 
-This module does stuff.
+This module contains functions that scrap data about funded research projects
+from institutions like ANII, CSIC and EI.
+
 Created on Sun Aug  1 10:43:34 2021
 """
 
@@ -24,11 +26,19 @@ def generator():
 
 
 def make_request(url, sleep = None, data = None):
-    '''
-    some function description to input later.
+    '''Makes GET and POST requests using request module.
 
-    input variables
-    output results
+    Input parameters:
+    url = A string, must be a website valid URL.
+    sleep = An integer, this will delay the next request. Check robots.txt to 
+    have an idea which value to input.
+    data = A dictionary, used for POST requests.
+    
+    Output results:
+    r = It's either a request.get or request.post object
+    sleep_time = It's a floating number. This is generated in order to pass as
+    the sleep parameter when attemping multiple request to the same website,
+    and thus avoiding a DDoS attack.
     example
     '''
 
@@ -57,7 +67,7 @@ def make_request(url, sleep = None, data = None):
         # Delay next request by random rate between 1 and 2 times longer
         # than (10s + time it took to load page).
         # 10s was chosen because CSIC website asks for it in their robots.txt
-        delay = 10 + (time.time() - start)
+        delay = 10 + (time.time()-start)
         sleep_time = random.uniform(1, 2) * delay
         # If response was successful, no exception will be raised
         # Uncomment next line in case of wanting to know the status code
@@ -73,8 +83,7 @@ def make_request(url, sleep = None, data = None):
 
 
 def extract_text(html_content, add_new_line = False):
-    '''
-    some function description to input later.
+    '''some function description to input later.
 
     input variables
     output results
@@ -87,7 +96,7 @@ def extract_text(html_content, add_new_line = False):
             text += ele.text + '\n' #### evitar \n en último elemento usando range(len())? o while? y ahorra un loop
     else:
         text = html_content.text
-    text = 'n/a' if (text.isspace()) or (text == None) else text.strip()
+    text = 'n/a' if (text.isspace()) or (text==None) else text.strip()
     if text != 'n/a':
         text = text.lower()
         text = (
@@ -101,8 +110,7 @@ def extract_text(html_content, add_new_line = False):
 
 
 def extract_href(html_content):
-    '''
-    some function description to input later.
+    '''some function description to input later.
 
     input variables
     output results
@@ -110,24 +118,23 @@ def extract_href(html_content):
     '''
 
     href = html_content.get('href')
-    href = 'n/a' if (href.isspace()) or (href == None) else href.strip()
+    href = 'n/a' if (href.isspace()) or (href==None) else href.strip()
     href = href + '/' if (href != 'n/a') and (href[-1] != '/') else href
 
     return href
 
 
-def clean(string, output_ls = False, keyword = None):  #Incluirla en extract?
-    '''
-    some function description to input later.
+def clean(string, output_list = False, keyword = None):  #Incluirla en extract?
+    '''some function description to input later.
 
     input variables
     output results
     example
     '''
 
-    if output_ls: ### Sirve solo para CSIC y EI, ANII solo tiene un responsable, SNI no tiene responsable (estos se limpian en DF)
-        if (keyword == 'responsables') or (keyword == 'responsables:'): ### si checkeo aca las palabras, no es necesario en linear_search()
-            to_replace = (
+    if output_list: ### Sirve solo para CSIC y EI, ANII solo tiene un responsable, SNI no tiene responsable (estos se limpian en DF)
+        if keyword in ['responsables', 'responsables:']: ### si checkeo aca las palabras, no es necesario en linear_search()
+            search_criteria = (
                 r'prof\.|dra\.|adj\.|adj,|agdo\.|agda\.|tit\.|as\.|dr\.|lic\.'
                 r'|br\.|mg\.|\(\w*\)|\(designada.*|responsables:'
                 r'|comision curricular:|comision de seguimiento|coordinadora.*'
@@ -135,15 +142,15 @@ def clean(string, output_ls = False, keyword = None):  #Incluirla en extract?
                 r'|\sdepbio.*|\scenur.*|(?<!\()\sfacultad.*'
                 )
         elif keyword == 'servicios involucrados':
-            to_replace = r'\(\w*\)|:.*'
-        text = re.sub(to_replace, '', string)
+            search_criteria = r'\(\w*\)|:.*'
+        text = re.sub(search_criteria, '', string)
         text = re.sub('\(.*\)|-.*', '', text)
-        ls = re.split('\n+|/|,|\.|;', text)
+        results_list = re.split('\n+|/|,|\.|;', text)
         # Cleans list of empty string values by using "if x" (in order to
         # evaluate TRUE it must not be empty)
-        ls[:] = [x.strip() for x in ls if x.strip()]
+        results_list[:] = [x.strip() for x in results_list if x.strip()]
 
-        return ls
+        return results_list
 
     else:
         text = string.replace('\n', ' ').replace('\r', '')  # parece no funcionar aca, pero en extract funcionaba.
@@ -152,8 +159,7 @@ def clean(string, output_ls = False, keyword = None):  #Incluirla en extract?
 
 
 def linear_search(html_content, keyword, in_content = False, inverse = False):
-    '''
-    some function description to input later.
+    '''some function description to input later.
 
     input variables
     output results
@@ -166,12 +172,6 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
         'pagina en construccion.',
         'no corresponde'
         ]
-    # List of keywords to compare for the clean function.
-    clean_keywords = [
-        'responsables',
-        'responsables:',
-        'servicios involucrados'
-        ]
     # Iterate through each element in html_content and extract its text.
     for i in range(len(html_content)):
         text = extract_text(html_content[i])
@@ -182,14 +182,14 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
             text = clean(text)
             attr, value = (
                 # Split on the first space counting from the end of the string,
-                re.split('\s(?=\S+$)', text) 
+                re.split('\s(?=\S+$)', text)
                 if inverse
                 # else split on the first space.
                 else text.split(maxsplit = 1)
                 )
-            if (attr == keyword) and (value not in missing_values):
+            if (attr==keyword) and (value not in missing_values):
                 return attr, value
-            elif (attr == keyword) and (value in missing_values):
+            elif (attr==keyword) and (value in missing_values):
                 return attr, 'n/a'
 
         # Else just check for a match and if found apply extract_text on child.
@@ -201,8 +201,10 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
                 )
             if child not in missing_values:
                 child = (
-                    clean(child, True, keyword) 
-                    if keyword in clean_keywords
+                    clean(child, True, keyword)
+                    if keyword in ['responsables', 
+                                   'responsables:', 
+                                   'servicios involucrados']
                     else clean(child)
                     )
                 return text, child
@@ -215,8 +217,7 @@ def linear_search(html_content, keyword, in_content = False, inverse = False):
 
 def table_scrapper(rows, cell_tag, dataset,
                    keys, href = None, base_url = None):
-    '''
-    some function description to input later.
+    '''some function description to input later.
 
     input variables
     output results
@@ -255,7 +256,7 @@ def table_scrapper(rows, cell_tag, dataset,
                 url = extract_href(url)
                 url = (
                     base_url + url
-                    if (base_url != None) and (url != 'n/a') 
+                    if (base_url != None) and (url != 'n/a')
                     else url
                     )
                 dic[k].append(url)
